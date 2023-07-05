@@ -1,0 +1,32 @@
+{
+  "name": "apitoolkit-fasftify",
+  "version": "1.0.0",
+  "description": "APIToolkit Fastify SDK",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/apitoolkit/apitoolkit-fasftify.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/apitoolkit/apitoolkit-fasftify/issues"
+  },
+  "homepage": "https://github.com/apitoolkit/apitoolkit-fasftify#readme",
+  "devDependencies": {
+    "@types/jsonpath": "^0.2.0",
+    "@types/node-fetch": "^2.6.4",
+    "jest": "^29.6.0",
+    "typescript": "^5.1.6"
+  },
+  "dependencies": {
+    "@google-cloud/pubsub": "^3.7.1",
+    "fastify": "^4.19.2",
+    "jsonpath": "^1.1.1",
+    "node-fetch": "^2.6.7"
+  }
+}
