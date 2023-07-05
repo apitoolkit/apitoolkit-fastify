@@ -144,6 +144,7 @@ export default class APIToolkit {
     private redactHeaders(headers: any, headersToRedact: string[]) {
         for (const [key, value] of Object.entries(headers)) {
             if (headersToRedact.some(header => header.includes(key) || header.includes(key.toLocaleLowerCase()))) {
+                console.log(key)
                 headers[key] = ["[CLIENT_REDACTED]"]
             } else if (key === "Cookie" || key === "cookie") {
                 headers[key] = ["[CLIENT_REDACTED]"]

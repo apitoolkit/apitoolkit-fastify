@@ -4,7 +4,7 @@
   "description": "APIToolkit Fastify SDK",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -18,9 +18,11 @@
   },
   "homepage": "https://github.com/apitoolkit/apitoolkit-fasftify#readme",
   "devDependencies": {
+    "@types/jest": "^29.5.2",
     "@types/jsonpath": "^0.2.0",
     "@types/node-fetch": "^2.6.4",
     "jest": "^29.6.0",
+    "ts-jest": "^29.1.1",
     "typescript": "^5.1.6"
   },
   "dependencies": {
