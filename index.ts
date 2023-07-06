@@ -81,18 +81,17 @@ export default class APIToolkit {
         return new APIToolkit(pubsubClient, topic_id, project_id, fastify, redactHeaders, redactRequestBody, redactResponseBody);
     }
     private getStringValue(val: unknown): string {
-        if (val) {
-            if (typeof val === "string") {
-                return val
-            } else {
-                try {
-                    return JSON.stringify({ ...(val as any) })
-                } catch (error) {
-                    return ""
-                }
+        if (typeof val === "string") {
+            return val;
+        } else if (Buffer.isBuffer(val)) {
+            return val.toString();
+        } else {
+            try {
+                return JSON.stringify(val);
+            } catch (error) {
+                return "";
             }
         }
-        return ""
     }
     private getQuery(query: unknown) {
         try {
