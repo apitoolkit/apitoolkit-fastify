@@ -1,6 +1,6 @@
-# Fastify SDK Documentation
+# APITOOLKIT Fastify SDK
 
-The Fastify SDK provided by APIToolkit is a library that allows you to integrate your Fastify applications with APIToolkit's monitoring and logging capabilities. By using this SDK, you can automatically collect and publish relevant data about incoming requests and outgoing responses to a Google Cloud Pub/Sub topic.
+The APIToolkit Fastify SDK is a library that enables seamless integration of Fastify applications with APIToolkit's monitorin. By utilizing this SDK, you can effortlessly collect and publish relevant data about incoming requests and outgoing responses to APIToolkit's servers.
 
 ## Installation
 
@@ -22,7 +22,7 @@ import APIToolkit from 'apitoolkit-fastify';
 
 ### Adding the SDK to a fastify project
 
-To begin collecting and publishing request/response data, it is essential to initialize the SDK. This entails creating an instance of the `APIToolkit` class and configuring it with necessary parameters. These parameters include your app's Fastify instance and an APIToolkit API key. You can learn how to generate API keys by visiting this link. Finally, invoke the init method of the instance to complete the initialization process.
+To begin collecting and publishing request/response data to APIToolkit's servers, it is essential to initialize the SDK. This entails creating an instance of the `APIToolkit` class and configuring it with necessary parameters. These parameters include your app's Fastify instance and an APIToolkit API key. You can learn how to generate API keys by visiting this [link](https://apitoolkit.io/docs/dashboard/generating-api-keys/). Finally, invoke the init method of the instance to complete the initialization process.
 
 ```javascript
 import APIToolkit from 'apitoolkit-fastify';
@@ -49,28 +49,30 @@ fastify.listen({ port: 3000 }, function (err, address) {
 });
 ```
 
-The `NewClient` method initializes the SDK with the provided configuration. It requires the following parameters (others are optional):
+The NewClient method initializes the SDK with the provided configuration. It requires the following parameters (others are optional):
 
-- `apiKey`: Your APIToolkit API key.
-- `fastify`: An instance of Fastify.
+- apiKey: Your APIToolkit API key.
+- fastify: An instance of Fastify.
 
 ### Configuration Options
 
-The `NewClient` method accepts an optional configuration object with the following properties:
+The NewClient method accepts an optional configuration object with the following properties:
 
-- `apiKey` (required): Your APIToolkit API key.
-- `fastify` (required): An instance of Fastify.
-- `redactHeaders` (optional): An array of header names to redact from the captured request headers (case insensitive).
-- `redactRequestBody` (optional): An array of JSONPath expressions specifying fields to redact from the request body.
-- `redactResponseBody` (optional): An array of JSONPath expressions specifying fields to redact from the response body.
+- apiKey (required): Your APIToolkit API key.
+- fastify (required): An instance of Fastify.
+- redactHeaders (optional): An array of header names to redact from the captured request headers (case insensitive).
+- redactRequestBody (optional): An array of JSONPath expressions specifying fields to redact from the request body.
+- redactResponseBody (optional): An array of JSONPath expressions specifying fields to redact from the response body.
 
 ### Redacting Sensitive Information
 
-The SDK provides options for redacting sensitive information from the captured data. The `redactHeaders`, `redactRequestBody`, and `redactResponseBody` configuration options allow you to specify headers and fields to be redacted.
+If you have fields which are too sensitive and should not be sent to APIToolkit servers, you can mark those fields to be redacted either via the APIToolkit dashboard, or via this client SDK. Redacting fields via the SDK means that those fields never leave your servers in the first place, compared to redacting it via the APIToolkit dashboard, which would redact the fields on the edge before further processing. But then the data still needs to be transported from your servers before they are redacted.
+
+To mark a field for redacting via this SDK, you simply need to provide additional arguments to the APIToolkitService with the paths to the fields that should be redacted. There are 3 potential arguments which you can provide to configure what gets redacted
 
 #### Redacting Headers
 
-To redact specific headers, provide an array of case insensitive header names to the `redactHeaders` configuration option:
+To redact specific headers, provide an array of case insensitive list of HTTP header keys to be redacted before data is sent out. eg COOKIE(redacted by default), CONTENT-TYPE, etc to the `redactHeaders` configuration option:
 
 ```javascript
 import APIToolkit from 'apitoolkit-fastify';
@@ -94,23 +96,29 @@ fastify.listen({ port: 3000 }, function (err, address) {
 });
 ```
 
-Any headers specified in the `redactHeaders` array will be replaced with `"[CLIENT_REDACTED]"` in the captured data.
+Any headers specified in the `redactHeaders` array will be replaced with `"[CLIENT_REDACTED]"` in the captured data and will never leave your servers.
 
 #### Redacting Request and Response Fields
 
-To redact specific fields in the request and response bodies, provide an array of JSONPath expressions to the `redactRequestBody` and `redactResponseBody` configuration options:
+To redact specific fields in the request and response bodies, provide an array of JSONPath expressions to the `redactRequestBody` and `redactResponseBody` configuration options.
+Examples of valid jsonpaths would be:
+`$.store.book`: Will replace the books field inside the store object with the string [CLIENT_REDACTED]
+`$.store.books[*].author`: Will redact the author field in all the objects in the books list, inside the store object.
+To learn more about jsonpath to help form your queries [read this](https://support.smartbear.com/alertsite/docs/monitors/api/endpoint/jsonpath.html).
 
 ```javascript
 import APIToolkit from 'apitoolkit-fastify';
 import Fastify from 'fastify';
 const fastify = Fastify();
 
-const redactRequestBody = ['$.password', '$.user.email'];
+const redactRequestBody = ['$.password', '$.user.creditcard.cvv'];
+const redactResponseBody = ['$.apikeys[*]', '$.message.type'];
 
 const apittoolkitClient = APIToolkit.NewClient({
   apiKey: '<YOUR API KEY>',
   fastify,
   redactRequestBody,
+  redactResponseBody,
 });
 
 apitoolkitClient.init();
@@ -123,8 +131,4 @@ fastify.listen({ port: 3000 }, function (err, address) {
 });
 ```
 
-The JSONPath expressions in the `redactRequestBody` and `redactResponseBody` arrays will
-be used to locate the corresponding fields in the request and response bodies. The values of these fields will be replaced with `"[CLIENT_REDACTED]"` in the captured data.
-
-It is important to note that while the RedactHeaders config field accepts a list of headers(case insensitive), the RedactRequestBody and RedactResponseBody expect a list of JSONPath strings as arguments.
-The choice of JSONPath was selected to allow you have great flexibility in descibing which fields within your responses are sensitive. Also note that these list of items to be redacted will be aplied to all endpoint requests and responses on your server. To learn more about jsonpath to help form your queries, please take a look at this cheatsheet: https://lzone.de/cheat-sheet/JSONPath
+Congratulations! You have successfully set up your Fastify API to send data to APIToolkit. Now you can visit your dashboard to explore your API logs, identify anomalies, generate Swagger documentation, and more. Enjoy the benefits of APIToolkit's powerful monitoring and analysis features for your Fastify applications!
