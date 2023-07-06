@@ -80,18 +80,37 @@ export default class APIToolkit {
 
         return new APIToolkit(pubsubClient, topic_id, project_id, fastify, redactHeaders, redactRequestBody, redactResponseBody);
     }
-
+    private getStringValue(val: unknown): string {
+        if (val) {
+            if (typeof val === "string") {
+                return val
+            } else {
+                try {
+                    return JSON.stringify({ ...(val as any) })
+                } catch (error) {
+                    return ""
+                }
+            }
+        }
+        return ""
+    }
+    private getQuery(query: unknown) {
+        try {
+            return { ...(query as any) }
+        } catch (error) {
+            return {}
+        }
+    }
     public init() {
-        this.#fastify.addHook('preHandler', (request, reply, done) => {
-            console.log(request.body)
+        this.#fastify.addHook('preHandler', async (request, reply, payload) => {
             this.#startTimes.set(request.id, hrtime.bigint())
-            done();
+            return payload
         });
         this.#fastify.addHook('onSend', async (request, reply, data) => {
             try {
-                console.log(request.body)
-                const reqBody = request.body instanceof Object ? JSON.stringify(request.body) : String(request.body)
-                const query = request.query instanceof Object ? request.query : {}
+                let reqBody = this.getStringValue(request.body)
+                let resBody = this.getStringValue(data)
+
                 const reqObjEntries = Object.entries(request.headers).map(([k, v]) => {
                     if (typeof v === "string") return [k, [v]]
                     return [k, v]
@@ -105,6 +124,7 @@ export default class APIToolkit {
                 })
                 const resHeaders = Object.fromEntries(resObjEntries)
 
+                const query = this.getQuery(request.query)
                 const queryObjEntries = Object.entries(query).map(([k, v]) => {
                     if (typeof v === "string") return [k, [v]]
                     return [k, v]
@@ -127,7 +147,7 @@ export default class APIToolkit {
                     referer: request.headers.referer ?? '',
                     request_body: Buffer.from(this.redactFields(reqBody, this.#redactRequestBody)).toString('base64'),
                     request_headers: this.redactHeaders(reqHeaders, this.#redactHeaders),
-                    response_body: Buffer.from(this.redactFields(String(data), this.#redactResponseBody)).toString('base64'),
+                    response_body: Buffer.from(this.redactFields(resBody, this.#redactResponseBody)).toString('base64'),
                     response_headers: this.redactHeaders(resHeaders, this.#redactHeaders),
                     sdk_type: "JsExpress",
                     status_code: reply.statusCode,
@@ -144,7 +164,6 @@ export default class APIToolkit {
     private redactHeaders(headers: any, headersToRedact: string[]) {
         for (const [key, value] of Object.entries(headers)) {
             if (headersToRedact.some(header => header.includes(key) || header.includes(key.toLocaleLowerCase()))) {
-                console.log(key)
                 headers[key] = ["[CLIENT_REDACTED]"]
             } else if (key === "Cookie" || key === "cookie") {
                 headers[key] = ["[CLIENT_REDACTED]"]
