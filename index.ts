@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-import { PubSub } from '@google-cloud/pubsub';
+import { PubSub, Topic } from '@google-cloud/pubsub';
 import { hrtime } from 'node:process';
 import jsonpath from "jsonpath"
 import { FastifyInstance } from 'fastify'
@@ -80,6 +80,7 @@ export default class APIToolkit {
 
         return new APIToolkit(pubsubClient, topic_id, project_id, fastify, redactHeaders, redactRequestBody, redactResponseBody);
     }
+
     private getStringValue(val: unknown): string {
         if (typeof val === "string") {
             return val;
@@ -93,6 +94,7 @@ export default class APIToolkit {
             }
         }
     }
+
     private getQuery(query: unknown) {
         try {
             return { ...(query as any) }
@@ -100,10 +102,11 @@ export default class APIToolkit {
             return {}
         }
     }
+
     public init() {
-        this.#fastify.addHook('preHandler', async (request, reply, payload) => {
+        this.#fastify.addHook('preHandler', (request, reply, done) => {
             this.#startTimes.set(request.id, hrtime.bigint())
-            return payload
+            done()
         });
         this.#fastify.addHook('onSend', async (request, reply, data) => {
             try {
@@ -155,6 +158,7 @@ export default class APIToolkit {
                 }
                 this.#pubsub.topic(this.#topic).publishMessage({ json: payload })
             } catch (error) {
+                console.log(error)
             }
             return data
         });
