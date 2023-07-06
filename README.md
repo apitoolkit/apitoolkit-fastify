@@ -22,7 +22,7 @@ import APIToolkit from 'apitoolkit-fastify';
 
 ### Adding the SDK to a fastify project
 
-Before you can start collecting and publishing request/response data, you need to initialize the SDK. The initialization process involves creating an instance of the `APIToolkit` class and configuring it with the required parameters and then calling the `init` method of the instance.
+To begin collecting and publishing request/response data, it is essential to initialize the SDK. This entails creating an instance of the `APIToolkit` class and configuring it with necessary parameters. These parameters include your app's Fastify instance and an APIToolkit API key. You can learn how to generate API keys by visiting this link. Finally, invoke the init method of the instance to complete the initialization process.
 
 ```javascript
 import APIToolkit from 'apitoolkit-fastify';
@@ -60,7 +60,6 @@ The `NewClient` method accepts an optional configuration object with the followi
 
 - `apiKey` (required): Your APIToolkit API key.
 - `fastify` (required): An instance of Fastify.
-- `rootURL` (optional): The root URL for the APIToolkit API. Defaults to "https://app.apitoolkit.io".
 - `redactHeaders` (optional): An array of header names to redact from the captured request headers (case insensitive).
 - `redactRequestBody` (optional): An array of JSONPath expressions specifying fields to redact from the request body.
 - `redactResponseBody` (optional): An array of JSONPath expressions specifying fields to redact from the response body.
@@ -71,15 +70,27 @@ The SDK provides options for redacting sensitive information from the captured d
 
 #### Redacting Headers
 
-To redact specific headers, provide an array of header names to the `redactHeaders` configuration option:
+To redact specific headers, provide an array of case insensitive header names to the `redactHeaders` configuration option:
 
 ```javascript
-const redactHeaders = ['Authorization', 'X-Secret-Token'];
+import APIToolkit from 'apitoolkit-fastify';
+import Fastify from 'fastify';
+const fastify = Fastify();
 
-const toolkit = APIToolkit.NewClient({
-  apiKey,
+const redactHeaders = ['Authorization', 'X-Secret-Token'];
+const apittoolkitClient = APIToolkit.NewClient({
+  apiKey: '<YOUR API KEY>',
   fastify,
   redactHeaders,
+});
+
+apitoolkitClient.init();
+
+fastify.listen({ port: 3000 }, function (err, address) {
+  if (err) {
+    fastify.log.error(err);
+    process.exit(1);
+  }
 });
 ```
 
@@ -90,15 +101,30 @@ Any headers specified in the `redactHeaders` array will be replaced with `"[CLIE
 To redact specific fields in the request and response bodies, provide an array of JSONPath expressions to the `redactRequestBody` and `redactResponseBody` configuration options:
 
 ```javascript
+import APIToolkit from 'apitoolkit-fastify';
+import Fastify from 'fastify';
+const fastify = Fastify();
+
 const redactRequestBody = ['$.password', '$.user.email'];
 
-const toolkit = APIToolkit.NewClient({
-  apiKey,
+const apittoolkitClient = APIToolkit.NewClient({
+  apiKey: '<YOUR API KEY>',
   fastify,
   redactRequestBody,
+});
+
+apitoolkitClient.init();
+
+fastify.listen({ port: 3000 }, function (err, address) {
+  if (err) {
+    fastify.log.error(err);
+    process.exit(1);
+  }
 });
 ```
 
 The JSONPath expressions in the `redactRequestBody` and `redactResponseBody` arrays will
-
 be used to locate the corresponding fields in the request and response bodies. The values of these fields will be replaced with `"[CLIENT_REDACTED]"` in the captured data.
+
+It is important to note that while the RedactHeaders config field accepts a list of headers(case insensitive), the RedactRequestBody and RedactResponseBody expect a list of JSONPath strings as arguments.
+The choice of JSONPath was selected to allow you have great flexibility in descibing which fields within your responses are sensitive. Also note that these list of items to be redacted will be aplied to all endpoint requests and responses on your server. To learn more about jsonpath to help form your queries, please take a look at this cheatsheet: https://lzone.de/cheat-sheet/JSONPath
