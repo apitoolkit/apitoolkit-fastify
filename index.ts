@@ -73,9 +73,10 @@ export default class APIToolkit {
         if (!resp.ok) throw new Error(`Error getting apitoolkit client_metadata ${resp.status}`);
 
         const clientMetadata = await resp.json() as ClientMetadata
-        const { pubsub_project_id, topic_id, project_id } = clientMetadata;
+        const { pubsub_project_id, topic_id, project_id, pubsub_push_service_account } = clientMetadata;
         const pubsubClient = new PubSub({
-            projectId: pubsub_project_id
+            projectId: pubsub_project_id,
+            authClient: (new PubSub()).auth.fromJSON(pubsub_push_service_account),
         });
 
         return new APIToolkit(pubsubClient, topic_id, project_id, fastify, redactHeaders, redactRequestBody, redactResponseBody);
