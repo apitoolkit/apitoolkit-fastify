@@ -24,7 +24,7 @@ type Payload = {
     duration: number
     host: string
     method: string
-    path_params: Object,
+    path_params: any,
     project_id: string
     proto_major: number
     proto_minor: number
