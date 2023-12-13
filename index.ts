@@ -1,9 +1,9 @@
-import fetch from 'node-fetch';
+import fetch from 'sync-fetch';
 import { PubSub, Topic } from '@google-cloud/pubsub';
 import { hrtime } from 'node:process';
 import jsonpath from "jsonpath"
 import { FastifyInstance } from 'fastify'
-
+import { buildPayload } from "apitoolkit-js";
 export type Config = {
     apiKey: string;
     fastify: FastifyInstance;
@@ -62,8 +62,8 @@ export default class APIToolkit {
         this.init = this.init.bind(this)
     }
 
-    static async NewClient({ apiKey, fastify, rootURL = "https://app.apitoolkit.io", redactHeaders = [], redactRequestBody = [], redactResponseBody = [] }: Config) {
-        const resp = await fetch(rootURL + "/api/client_metadata", {
+    static NewClient({ apiKey, fastify, rootURL = "https://app.apitoolkit.io", redactHeaders = [], redactRequestBody = [], redactResponseBody = [] }: Config) {
+        const resp = fetch(rootURL + "/api/client_metadata", {
             method: 'GET',
             headers: {
                 Authorization: "Bearer " + apiKey,
@@ -72,7 +72,7 @@ export default class APIToolkit {
         })
         if (!resp.ok) throw new Error(`Error getting apitoolkit client_metadata ${resp.status}`);
 
-        const clientMetadata = await resp.json() as ClientMetadata
+        const clientMetadata = resp.json() as ClientMetadata
         const { pubsub_project_id, topic_id, project_id, pubsub_push_service_account } = clientMetadata;
         const pubsubClient = new PubSub({
             projectId: pubsub_project_id,
