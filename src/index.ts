@@ -3,7 +3,7 @@ import { PubSub, Topic } from '@google-cloud/pubsub';
 import { hrtime } from 'node:process';
 import jsonpath from "jsonpath"
 import { FastifyInstance } from 'fastify'
-import { buildPayload } from "apitoolkit-js";
+import { buildPayload, asyncLocalStorage } from "apitoolkit-js";
 export type Config = {
     apiKey: string;
     fastify: FastifyInstance;
@@ -11,6 +11,8 @@ export type Config = {
     redactHeaders?: string[];
     redactRequestBody?: string[];
     redactResponseBody?: string[]
+    service_version?: string | undefined;
+    tags?: string[];
 }
 
 type ClientMetadata = {
@@ -50,8 +52,11 @@ export default class APIToolkit {
     #redactResponseBody: string[]
     #fastify: FastifyInstance
     #startTimes = new Map<string, bigint>()
+    #service_version: string | undefined;
+    #tags: string[];
 
-    constructor(pubsub: PubSub, topic: string, project_id: string, fastify: FastifyInstance, redactHeaders: string[], redactReqBody: string[], redactRespBody: string[]) {
+    constructor(pubsub: PubSub, topic: string, project_id: string, fastify: FastifyInstance, redactHeaders: string[],
+        redactReqBody: string[], redactRespBody: string[], service_version: string | undefined, tags: string[]) {
         this.#topic = topic
         this.#pubsub = pubsub
         this.#project_id = project_id
@@ -59,10 +64,12 @@ export default class APIToolkit {
         this.#redactRequestBody = redactReqBody
         this.#redactResponseBody = redactRespBody
         this.#fastify = fastify
+        this.#service_version = service_version
+        this.#tags = tags
         this.init = this.init.bind(this)
     }
 
-    static NewClient({ apiKey, fastify, rootURL = "https://app.apitoolkit.io", redactHeaders = [], redactRequestBody = [], redactResponseBody = [] }: Config) {
+    static NewClient({ apiKey, fastify, rootURL = "https://app.apitoolkit.io", redactHeaders = [], redactRequestBody = [], redactResponseBody = [], service_version = undefined, tags = [] }: Config) {
         const resp = fetch(rootURL + "/api/client_metadata", {
             method: 'GET',
             headers: {
@@ -79,7 +86,7 @@ export default class APIToolkit {
             authClient: (new PubSub()).auth.fromJSON(pubsub_push_service_account),
         });
 
-        return new APIToolkit(pubsubClient, topic_id, project_id, fastify, redactHeaders, redactRequestBody, redactResponseBody);
+        return new APIToolkit(pubsubClient, topic_id, project_id, fastify, redactHeaders, redactRequestBody, redactResponseBody, service_version, tags);
     }
 
     private getStringValue(val: unknown): string {
@@ -156,16 +163,16 @@ export default class APIToolkit {
                     redactRequestBody: this.#redactRequestBody,
                     redactResponseBody: this.#redactResponseBody,
                     errors: [],
-                    service_version: "",
-                    tags: [],
+                    service_version: this.#service_version,
+                    tags: this.#tags,
                     msg_id: "",
                     parent_id: undefined
                 })
                 this.#pubsub.topic(this.#topic).publishMessage({ json: payload })
+                return data
             } catch (error) {
-                console.log(error)
+                return data
             }
-            return data
         });
     }
 
