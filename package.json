@@ -1,8 +1,8 @@
 {
-  "name": "apitoolkit-fasftify",
+  "name": "apitoolkit-fastify",
   "version": "1.0.0",
   "description": "APIToolkit Fastify SDK",
-  "main": "index.js",
+  "main": "./lib",
   "scripts": {
     "test": "jest"
   },
@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "@google-cloud/pubsub": "^3.7.1",
-    "apitoolkit-js": "^2.0.1",
+    "apitoolkit-js": "^2.0.2",
     "fastify": "^4.19.2",
     "jsonpath": "^1.1.1",
     "node-fetch": "^2.6.7",

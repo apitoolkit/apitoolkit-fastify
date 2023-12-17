@@ -137,26 +137,30 @@ export default class APIToolkit {
                 const start_time = target ? target : hrtime.bigint()
                 this.#startTimes.delete(request.id)
                 const pathParams = request.params ?? {}
-                const payload: Payload = {
-                    duration: Number(hrtime.bigint() - start_time),
+                const payload = buildPayload({
+                    start_time: start_time,
                     host: request.hostname,
                     method: request.method,
-                    path_params: pathParams,
+                    reqParams: pathParams,
                     project_id: this.#project_id,
-                    proto_minor: 1,
-                    proto_major: 1,
-                    query_params: queryParams,
-                    raw_url: request.url,
-                    referer: request.headers.referer ?? '',
-                    request_body: Buffer.from(this.redactFields(reqBody, this.#redactRequestBody)).toString('base64'),
-                    request_headers: this.redactHeaders(reqHeaders, this.#redactHeaders),
-                    response_body: Buffer.from(this.redactFields(resBody, this.#redactResponseBody)).toString('base64'),
-                    response_headers: this.redactHeaders(resHeaders, this.#redactHeaders),
-                    sdk_type: "JsExpress",
+                    reqQuery: queryParams,
+                    reqBody: reqBody,
+                    respBody: resBody,
+                    responseHeaders: resHeaders,
+                    requestHeaders: reqHeaders,
+                    sdk_type: "JsFastify",
                     status_code: reply.statusCode,
-                    timestamp: new Date().toISOString(),
-                    url_path: request.routerPath
-                }
+                    raw_url: request.url,
+                    url_path: request.routerPath,
+                    redactHeaderLists: this.#redactHeaders,
+                    redactRequestBody: this.#redactRequestBody,
+                    redactResponseBody: this.#redactResponseBody,
+                    errors: [],
+                    service_version: "",
+                    tags: [],
+                    msg_id: "",
+                    parent_id: undefined
+                })
                 this.#pubsub.topic(this.#topic).publishMessage({ json: payload })
             } catch (error) {
                 console.log(error)
@@ -165,29 +169,4 @@ export default class APIToolkit {
         });
     }
 
-    private redactHeaders(headers: any, headersToRedact: string[]) {
-        for (const [key, value] of Object.entries(headers)) {
-            if (headersToRedact.some(header => header.includes(key) || header.includes(key.toLocaleLowerCase()))) {
-                headers[key] = ["[CLIENT_REDACTED]"]
-            } else if (key === "Cookie" || key === "cookie") {
-                headers[key] = ["[CLIENT_REDACTED]"]
-            }
-            else {
-                headers[key] = value
-            }
-        }
-        return headers
-    }
-
-    private redactFields(body: string, fieldsToRedact: string[]): string {
-        try {
-            const bodyOB = JSON.parse(body)
-            fieldsToRedact.forEach(path => {
-                jsonpath.apply(bodyOB, path, function () { return "[CLIENT_REDACTED]" });
-            })
-            return JSON.stringify(bodyOB)
-        } catch (error) {
-            return ""
-        }
-    }
 }
