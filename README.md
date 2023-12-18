@@ -30,7 +30,7 @@ import Fastify from 'fastify';
 const fastify = Fastify();
 
 // Create and initialize an instance of the APIToolkit
-const apittoolkitClient = await APIToolkit.NewClient({
+const apittoolkitClient = APIToolkit.NewClient({
   apiKey: 'YOUR_API_KEY',
   fastify,
 });
