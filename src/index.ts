@@ -36,9 +36,9 @@ type Payload = {
     raw_url: string
     referer: string
     request_body: string
-    request_headers: Object,
+    request_headers: Record<string, any>
     response_body: string
-    response_headers: Object
+    response_headers: Record<string, any>
     sdk_type: string
     status_code: number
     timestamp: string
@@ -119,7 +119,7 @@ export default class APIToolkit {
     public init() {
 
 
-        this.#fastify.addHook('preHandler', (request, reply, done) => {
+        this.#fastify.addHook('preHandler', (request, _reply, done) => {
             this.#startTimes.set(request.id, hrtime.bigint())
             asyncLocalStorage.run(new Map(), () => {
                 asyncLocalStorage.getStore()!.set('AT_client', this);
@@ -134,8 +134,8 @@ export default class APIToolkit {
 
         this.#fastify.addHook('onSend', async (request, reply, data) => {
             try {
-                let reqBody = this.getStringValue(request.body)
-                let resBody = this.getStringValue(data)
+                const reqBody = this.getStringValue(request.body)
+                const resBody = this.getStringValue(data)
 
                 const reqObjEntries = Object.entries(request.headers).map(([k, v]) => {
                     if (typeof v === "string") return [k, [v]]
