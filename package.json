@@ -2,21 +2,32 @@
   "name": "apitoolkit-fastify",
   "version": "1.0.0",
   "description": "APIToolkit Fastify SDK",
-  "main": "./lib",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "scripts": {
-    "test": "jest"
+    "build": "tsc",
+    "lint": "eslint . --ext .ts --fix",
+    "test": "jest --config jestconfig.json",
+    "format": "npx prettier --write .",
+    "prepare": "npm build",
+    "prepublishOnly": "npm test && npm lint",
+    "preversion": "npm lint",
+    "version": "git add -A src",
+    "postversion": "git push && git push --tags",
+    "updates": "npx npm-check-updates",
+    "updates:minor": "npx npm-check-updates --target minor"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/apitoolkit/apitoolkit-fasftify.git"
+    "url": "git+https://github.com/apitoolkit/apitoolkit-fastify.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/apitoolkit/apitoolkit-fasftify/issues"
+    "url": "https://github.com/apitoolkit/apitoolkit-fastify/issues"
   },
-  "homepage": "https://github.com/apitoolkit/apitoolkit-fasftify#readme",
+  "homepage": "https://github.com/apitoolkit/apitoolkit-fastify#readme",
   "devDependencies": {
     "@types/jest": "^29.5.2",
     "@types/jsonpath": "^0.2.0",
