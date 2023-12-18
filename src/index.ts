@@ -1,9 +1,11 @@
 import fetch from 'sync-fetch';
 import { PubSub, Topic } from '@google-cloud/pubsub';
 import { hrtime } from 'node:process';
-import jsonpath from "jsonpath"
 import { FastifyInstance } from 'fastify'
 import { buildPayload, asyncLocalStorage } from "apitoolkit-js";
+export { observeAxios, ReportError } from "apitoolkit-js"
+import { v4 as uuidv4 } from 'uuid';
+
 export type Config = {
     apiKey: string;
     fastify: FastifyInstance;
@@ -23,14 +25,14 @@ type ClientMetadata = {
 }
 
 type Payload = {
-    duration: number
-    host: string
+    duration: number,
+    host: string,
     method: string
     path_params: any,
     project_id: string
     proto_major: number
     proto_minor: number
-    query_params: Map<string, string[]>
+    query_params: Record<string, any>
     raw_url: string
     referer: string
     request_body: string
@@ -90,6 +92,7 @@ export default class APIToolkit {
     }
 
     private getStringValue(val: unknown): string {
+        if (!val) return "";
         if (typeof val === "string") {
             return val;
         } else if (Buffer.isBuffer(val)) {
@@ -110,12 +113,26 @@ export default class APIToolkit {
             return {}
         }
     }
-
+    public publishMessage(payload: Payload) {
+        console.log(payload)
+        this.#pubsub.topic(this.#topic).publishMessage({ json: payload })
+    }
     public init() {
+
+
         this.#fastify.addHook('preHandler', (request, reply, done) => {
             this.#startTimes.set(request.id, hrtime.bigint())
-            done()
+            asyncLocalStorage.run(new Map(), () => {
+                asyncLocalStorage.getStore()!.set('AT_client', this);
+                asyncLocalStorage.getStore()!.set('AT_project_id', this.#project_id);
+                asyncLocalStorage.getStore()!.set('AT_config', { tags: this.#tags, serviceVersion: this.#service_version });
+                asyncLocalStorage.getStore()!.set('AT_errors', []);
+                const msg_id: string = uuidv4();
+                asyncLocalStorage.getStore()!.set('AT_msg_id', msg_id);
+                done()
+            })
         });
+
         this.#fastify.addHook('onSend', async (request, reply, data) => {
             try {
                 let reqBody = this.getStringValue(request.body)
@@ -139,6 +156,8 @@ export default class APIToolkit {
                     if (typeof v === "string") return [k, [v]]
                     return [k, v]
                 })
+                const errors = asyncLocalStorage.getStore()?.get('AT_errors') ?? [];
+                const msg_id = asyncLocalStorage.getStore()?.get('AT_msg_id') ?? uuidv4();
                 const queryParams = Object.fromEntries(queryObjEntries)
                 const target = this.#startTimes.get(request.id)
                 const start_time = target ? target : hrtime.bigint()
@@ -158,22 +177,22 @@ export default class APIToolkit {
                     sdk_type: "JsFastify",
                     status_code: reply.statusCode,
                     raw_url: request.url,
-                    url_path: request.routerPath,
+                    url_path: request.routerPath || "",
                     redactHeaderLists: this.#redactHeaders,
                     redactRequestBody: this.#redactRequestBody,
                     redactResponseBody: this.#redactResponseBody,
-                    errors: [],
+                    errors: errors,
                     service_version: this.#service_version,
                     tags: this.#tags,
-                    msg_id: "",
+                    msg_id: msg_id,
                     parent_id: undefined
                 })
-                this.#pubsub.topic(this.#topic).publishMessage({ json: payload })
+                this.publishMessage(payload)
                 return data
             } catch (error) {
+                console.log(error)
                 return data
             }
         });
     }
-
 }
