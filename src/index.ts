@@ -114,7 +114,6 @@ export default class APIToolkit {
         }
     }
     public publishMessage(payload: Payload) {
-        console.log(payload)
         this.#pubsub.topic(this.#topic).publishMessage({ json: payload })
     }
     public init() {
@@ -190,7 +189,6 @@ export default class APIToolkit {
                 this.publishMessage(payload)
                 return data
             } catch (error) {
-                console.log(error)
                 return data
             }
         });
