@@ -43,7 +43,8 @@
   },
   "dependencies": {
     "@google-cloud/pubsub": "^3.7.1",
-    "apitoolkit-js": "^2.0.2",
+    "apitoolkit-js": "^3.2.9",
+    "axios": "^1.6.8",
     "fastify": "^4.19.2",
     "jsonpath": "^1.1.1",
     "node-fetch": "^2.6.7",

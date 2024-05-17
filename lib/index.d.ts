@@ -1,6 +1,7 @@
 import { PubSub } from '@google-cloud/pubsub';
 import { FastifyInstance } from 'fastify';
-export { observeAxios, ReportError } from "apitoolkit-js";
+export { observeAxios as obsAxios, ReportError } from "apitoolkit-js";
+import { AxiosInstance } from 'axios';
 export type Config = {
     apiKey: string;
     fastify: FastifyInstance;
@@ -38,5 +39,6 @@ export default class APIToolkit {
     private getStringValue;
     private getQuery;
     publishMessage(payload: Payload): void;
+    observeAxios(axiosInstance: AxiosInstance, urlWildcard?: string | undefined, redactHeaders?: string[] | undefined, redactRequestBody?: string[] | undefined, redactResponseBody?: string[] | undefined): any;
     init(): void;
 }

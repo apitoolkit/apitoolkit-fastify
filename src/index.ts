@@ -1,10 +1,11 @@
 import fetch from 'sync-fetch';
 import { PubSub, Topic } from '@google-cloud/pubsub';
 import { hrtime } from 'node:process';
-import { FastifyInstance } from 'fastify'
-import { buildPayload, asyncLocalStorage } from "apitoolkit-js";
-export { observeAxios, ReportError } from "apitoolkit-js"
 import { v4 as uuidv4 } from 'uuid';
+import { AxiosInstance } from 'axios';
+import { FastifyInstance } from 'fastify';
+import { buildPayload, asyncLocalStorage, observeAxios } from "apitoolkit-js";
+export { observeAxios, ReportError } from "apitoolkit-js"
 
 export type Config = {
     apiKey: string;
@@ -113,12 +114,30 @@ export default class APIToolkit {
             return {}
         }
     }
+
     public publishMessage(payload: Payload) {
         this.#pubsub.topic(this.#topic).publishMessage({ json: payload })
     }
+
+    public observeAxios(
+        axiosInstance: AxiosInstance,
+        urlWildcard?: string | undefined,
+        redactHeaders?: string[] | undefined,
+        redactRequestBody?: string[] | undefined,
+        redactResponseBody?: string[] | undefined
+    ) {
+           return observeAxios(
+                axiosInstance as any,
+                urlWildcard,
+                redactHeaders,
+                redactRequestBody,
+                redactResponseBody,
+                true,
+                this
+            )
+    }
+
     public init() {
-
-
         this.#fastify.addHook('preHandler', (request, _reply, done) => {
             this.#startTimes.set(request.id, hrtime.bigint())
             asyncLocalStorage.run(new Map(), () => {
