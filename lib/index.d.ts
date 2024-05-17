@@ -1,7 +1,7 @@
-import { PubSub } from '@google-cloud/pubsub';
-import { FastifyInstance } from 'fastify';
-export { observeAxios as obsAxios, ReportError } from "apitoolkit-js";
-import { AxiosInstance } from 'axios';
+import { PubSub } from "@google-cloud/pubsub";
+import { AxiosInstance } from "axios";
+import { FastifyInstance } from "fastify";
+export { observeAxios, ReportError } from "apitoolkit-js";
 export type Config = {
     apiKey: string;
     fastify: FastifyInstance;
@@ -9,6 +9,7 @@ export type Config = {
     redactHeaders?: string[];
     redactRequestBody?: string[];
     redactResponseBody?: string[];
+    debug?: boolean;
     service_version?: string | undefined;
     tags?: string[];
 };
@@ -32,13 +33,22 @@ type Payload = {
     timestamp: string;
     url_path: string;
 };
-export default class APIToolkit {
+declare class APIToolkit {
     #private;
-    constructor(pubsub: PubSub, topic: string, project_id: string, fastify: FastifyInstance, redactHeaders: string[], redactReqBody: string[], redactRespBody: string[], service_version: string | undefined, tags: string[]);
-    static NewClient({ apiKey, fastify, rootURL, redactHeaders, redactRequestBody, redactResponseBody, service_version, tags }: Config): APIToolkit;
+    constructor(pubsub: PubSub, topic: string, project_id: string, fastify: FastifyInstance, redactHeaders: string[], redactReqBody: string[], redactRespBody: string[], service_version: string | undefined, tags: string[], debug: boolean);
+    static NewClient({ apiKey, fastify, rootURL, redactHeaders, redactRequestBody, redactResponseBody, service_version, debug, tags, }: Config): APIToolkit;
     private getStringValue;
     private getQuery;
     publishMessage(payload: Payload): void;
-    observeAxios(axiosInstance: AxiosInstance, urlWildcard?: string | undefined, redactHeaders?: string[] | undefined, redactRequestBody?: string[] | undefined, redactResponseBody?: string[] | undefined): any;
+    getConfig(): {
+        project_id: string;
+        config: {
+            service_version: string | undefined;
+            tags: string[];
+        };
+    };
+    observeAxios(axiosInstance: AxiosInstance, urlWildcard?: string | undefined, redactHeaders?: string[] | undefined, redactRequestBody?: string[] | undefined, redactResponseBody?: string[] | undefined): AxiosInstance;
     init(): void;
 }
+export default APIToolkit;
+export { APIToolkit };
