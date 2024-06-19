@@ -1,5 +1,5 @@
 import { PubSub } from "@google-cloud/pubsub";
-import { AxiosInstance } from "axios";
+import { AxiosInstance, AxiosStatic } from "axios";
 import { FastifyInstance } from "fastify";
 export { observeAxios, ReportError } from "apitoolkit-js";
 export type Config = {
@@ -12,6 +12,7 @@ export type Config = {
     debug?: boolean;
     service_version?: string | undefined;
     tags?: string[];
+    monitorAxios?: AxiosInstance;
 };
 type Payload = {
     duration: number;
@@ -35,8 +36,8 @@ type Payload = {
 };
 declare class APIToolkit {
     #private;
-    constructor(pubsub: PubSub, topic: string, project_id: string, fastify: FastifyInstance, redactHeaders: string[], redactReqBody: string[], redactRespBody: string[], service_version: string | undefined, tags: string[], debug: boolean);
-    static NewClient({ apiKey, fastify, rootURL, redactHeaders, redactRequestBody, redactResponseBody, service_version, debug, tags, }: Config): APIToolkit;
+    constructor(pubsub: PubSub, topic: string, project_id: string, fastify: FastifyInstance, redactHeaders: string[], redactReqBody: string[], redactRespBody: string[], service_version: string | undefined, tags: string[], debug: boolean, monitorAxios: AxiosInstance | undefined);
+    static NewClient({ apiKey, fastify, rootURL, redactHeaders, redactRequestBody, redactResponseBody, service_version, debug, tags, monitorAxios, }: Config): APIToolkit;
     private getStringValue;
     private getQuery;
     publishMessage(payload: Payload): void;
@@ -47,7 +48,7 @@ declare class APIToolkit {
             tags: string[];
         };
     };
-    observeAxios(axiosInstance: AxiosInstance, urlWildcard?: string | undefined, redactHeaders?: string[] | undefined, redactRequestBody?: string[] | undefined, redactResponseBody?: string[] | undefined): AxiosInstance;
+    observeAxios(axiosInstance: AxiosStatic, urlWildcard?: string | undefined, redactHeaders?: string[] | undefined, redactRequestBody?: string[] | undefined, redactResponseBody?: string[] | undefined): AxiosInstance;
     init(): void;
 }
 export default APIToolkit;
