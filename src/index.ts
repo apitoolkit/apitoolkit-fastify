@@ -2,9 +2,14 @@ import fetch from "sync-fetch";
 import { PubSub, Topic } from "@google-cloud/pubsub";
 import { hrtime } from "node:process";
 import { v4 as uuidv4 } from "uuid";
-import { AxiosInstance } from "axios";
+import axios, { AxiosInstance } from "axios";
 import { FastifyInstance } from "fastify";
-import { buildPayload, asyncLocalStorage, observeAxios } from "apitoolkit-js";
+import {
+  buildPayload,
+  asyncLocalStorage,
+  observeAxios,
+  observeAxiosGlobal,
+} from "apitoolkit-js";
 export { observeAxios, ReportError } from "apitoolkit-js";
 
 export type Config = {
@@ -17,6 +22,7 @@ export type Config = {
   debug?: boolean;
   service_version?: string | undefined;
   tags?: string[];
+  monitorAxios?: AxiosInstance;
 };
 
 type ClientMetadata = {
@@ -59,6 +65,7 @@ class APIToolkit {
   #service_version: string | undefined;
   #tags: string[];
   #debug: boolean;
+  #axios: AxiosInstance | undefined;
 
   constructor(
     pubsub: PubSub,
@@ -70,7 +77,8 @@ class APIToolkit {
     redactRespBody: string[],
     service_version: string | undefined,
     tags: string[],
-    debug: boolean
+    debug: boolean,
+    monitorAxios: AxiosInstance | undefined
   ) {
     this.#topic = topic;
     this.#pubsub = pubsub;
@@ -82,6 +90,7 @@ class APIToolkit {
     this.#service_version = service_version;
     this.#tags = tags;
     this.#debug = debug;
+    this.#axios = monitorAxios;
     this.init = this.init.bind(this);
   }
 
@@ -95,6 +104,7 @@ class APIToolkit {
     service_version = undefined,
     debug = false,
     tags = [],
+    monitorAxios = undefined,
   }: Config) {
     const resp = fetch(rootURL + "/api/client_metadata", {
       method: "GET",
@@ -132,7 +142,8 @@ class APIToolkit {
       redactResponseBody,
       service_version,
       tags,
-      debug
+      debug,
+      monitorAxios
     );
   }
 
@@ -196,6 +207,16 @@ class APIToolkit {
   }
 
   public init() {
+    if (this.#axios) {
+      observeAxiosGlobal(
+        this.#axios,
+        undefined,
+        this.#redactHeaders,
+        this.#redactRequestBody,
+        this.#redactResponseBody,
+        this
+      );
+    }
     this.#fastify.addHook("preHandler", (request, _reply, done) => {
       if (this.#debug) {
         console.log("apitoolkit:  preHandler hook called");
@@ -203,15 +224,22 @@ class APIToolkit {
 
       this.#startTimes.set(request.id, hrtime.bigint());
       asyncLocalStorage.run(new Map(), () => {
-        asyncLocalStorage.getStore()!.set("AT_client", this);
-        asyncLocalStorage.getStore()!.set("AT_project_id", this.#project_id);
-        asyncLocalStorage.getStore()!.set("AT_config", {
-          tags: this.#tags,
-          serviceVersion: this.#service_version,
-        });
-        asyncLocalStorage.getStore()!.set("AT_errors", []);
-        const msg_id: string = uuidv4();
-        asyncLocalStorage.getStore()!.set("AT_msg_id", msg_id);
+        try {
+          asyncLocalStorage.getStore()!.set("AT_client", this);
+          asyncLocalStorage.getStore()!.set("AT_project_id", this.#project_id);
+          asyncLocalStorage.getStore()!.set("AT_config", {
+            tags: this.#tags,
+            serviceVersion: this.#service_version,
+          });
+          asyncLocalStorage.getStore()!.set("AT_errors", []);
+          const msg_id: string = uuidv4();
+          asyncLocalStorage.getStore()!.set("AT_msg_id", msg_id);
+        } catch (error) {
+          if (this.#debug) {
+            console.log("apitoolkit: error in preHandler hook");
+            console.log(error);
+          }
+        }
         done();
       });
     });
@@ -283,9 +311,6 @@ class APIToolkit {
         return data;
       }
     });
-    if (this.#debug) {
-      console.log("apitoolkit:  onSend hook called");
-    }
   }
 }
 
