@@ -2,13 +2,14 @@ import fetch from "sync-fetch";
 import { PubSub, Topic } from "@google-cloud/pubsub";
 import { hrtime } from "node:process";
 import { v4 as uuidv4 } from "uuid";
-import axios, { AxiosInstance } from "axios";
+import axios, { AxiosInstance, AxiosStatic } from "axios";
 import { FastifyInstance } from "fastify";
 import {
   buildPayload,
   asyncLocalStorage,
   observeAxios,
   observeAxiosGlobal,
+  ReportError,
 } from "apitoolkit-js";
 export { observeAxios, ReportError } from "apitoolkit-js";
 
@@ -189,14 +190,14 @@ class APIToolkit {
   }
 
   public observeAxios(
-    axiosInstance: AxiosInstance,
+    axiosInstance: AxiosStatic,
     urlWildcard?: string | undefined,
     redactHeaders?: string[] | undefined,
     redactRequestBody?: string[] | undefined,
     redactResponseBody?: string[] | undefined
   ) {
     return observeAxios(
-      axiosInstance as any,
+      axiosInstance,
       urlWildcard,
       redactHeaders,
       redactRequestBody,
@@ -219,7 +220,7 @@ class APIToolkit {
     }
     this.#fastify.addHook("preHandler", (request, _reply, done) => {
       if (this.#debug) {
-        console.log("apitoolkit:  preHandler hook called");
+        console.log("apitoolkit: preHandler hook called");
       }
 
       this.#startTimes.set(request.id, hrtime.bigint());
@@ -242,6 +243,10 @@ class APIToolkit {
         }
         done();
       });
+    });
+
+    this.#fastify.addHook("onError", async (_request, _reply, error) => {
+      ReportError(error);
     });
 
     this.#fastify.addHook("onSend", async (request, reply, data) => {
