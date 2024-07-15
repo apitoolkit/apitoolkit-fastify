@@ -62,7 +62,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git push origin temp-branch:master
+          git push origin temp-branch:main
 
       # Publish version to npmdd
       - name: Publish
