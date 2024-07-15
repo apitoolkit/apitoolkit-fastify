@@ -46,6 +46,17 @@ jobs:
       - name: Bump version
         run: npm version ${{ env.NEW_VERSION }} --no-git-tag-version
 
+      - name: Create and checkout temporary branch
+        run: |
+          git branch temp-branch
+          git checkout temp-branch
+
+      # Commit changes
+      - name: Commit CHANGELOG.md and package.json changes and create tag
+        run: |
+          git add "package.json"
+          git commit -m "chore: release ${{ env.NEW_VERSION }}"
+
       # Push repository changes
       - name: Push changes to repository
         env:
