@@ -272,6 +272,11 @@ class APIToolkit {
         console.log("apitoolkit:  onSend hook called");
       }
       if (!this.#project_id) {
+        if (this.#debug) {
+          console.log(
+            "apitoolkit:  onSend hook called but project_id is undefined"
+          );
+        }
         return data;
       }
 
