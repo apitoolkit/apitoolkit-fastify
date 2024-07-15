@@ -36,13 +36,13 @@ type Payload = {
 };
 declare class APIToolkit {
     #private;
-    constructor(pubsub: PubSub, topic: string, project_id: string, fastify: FastifyInstance, redactHeaders: string[], redactReqBody: string[], redactRespBody: string[], service_version: string | undefined, tags: string[], debug: boolean, monitorAxios: AxiosInstance | undefined);
+    constructor(pubsub: PubSub | undefined, topic: string | undefined, project_id: string | undefined, fastify: FastifyInstance, redactHeaders: string[], redactReqBody: string[], redactRespBody: string[], service_version: string | undefined, tags: string[], debug: boolean, monitorAxios: AxiosInstance | undefined);
     static NewClient({ apiKey, fastify, rootURL, redactHeaders, redactRequestBody, redactResponseBody, service_version, debug, tags, monitorAxios, }: Config): APIToolkit;
     private getStringValue;
     private getQuery;
     publishMessage(payload: Payload): void;
     getConfig(): {
-        project_id: string;
+        project_id: string | undefined;
         config: {
             service_version: string | undefined;
             tags: string[];
