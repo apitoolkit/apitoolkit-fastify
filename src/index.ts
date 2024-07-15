@@ -2,7 +2,7 @@ import fetch from "sync-fetch";
 import { PubSub, Topic } from "@google-cloud/pubsub";
 import { hrtime } from "node:process";
 import { v4 as uuidv4 } from "uuid";
-import axios, { AxiosInstance, AxiosStatic } from "axios";
+import { AxiosInstance, AxiosStatic } from "axios";
 import { FastifyInstance } from "fastify";
 import {
   buildPayload,
@@ -55,9 +55,9 @@ type Payload = {
 };
 
 class APIToolkit {
-  #topic: string;
-  #pubsub: PubSub;
-  #project_id: string;
+  #topic: string | undefined;
+  #pubsub: PubSub | undefined;
+  #project_id: string | undefined;
   #redactHeaders: string[];
   #redactRequestBody: string[];
   #redactResponseBody: string[];
@@ -69,9 +69,9 @@ class APIToolkit {
   #axios: AxiosInstance | undefined;
 
   constructor(
-    pubsub: PubSub,
-    topic: string,
-    project_id: string,
+    pubsub: PubSub | undefined,
+    topic: string | undefined,
+    project_id: string | undefined,
     fastify: FastifyInstance,
     redactHeaders: string[],
     redactReqBody: string[],
@@ -114,10 +114,26 @@ class APIToolkit {
         Accept: "application/json",
       },
     });
-    if (!resp.ok)
-      throw new Error(
-        `Error getting apitoolkit client_metadata ${resp.status}`
+    if (!resp.ok) {
+      if (resp.status === 401) {
+        throw new Error("APIToolkit: Invalid API Key");
+      } else {
+        console.log(`Error getting apitoolkit client_metadata ${resp.status}`);
+      }
+      return new APIToolkit(
+        undefined,
+        undefined,
+        undefined,
+        fastify,
+        redactHeaders,
+        redactRequestBody,
+        redactResponseBody,
+        service_version,
+        tags,
+        debug,
+        monitorAxios
       );
+    }
 
     const clientMetadata = resp.json() as ClientMetadata;
     const {
@@ -176,7 +192,9 @@ class APIToolkit {
       console.log("apitoolkit: publishing message");
       console.log(payload);
     }
-    this.#pubsub.topic(this.#topic).publishMessage({ json: payload });
+    if (this.#pubsub && this.#topic) {
+      this.#pubsub.topic(this.#topic).publishMessage({ json: payload });
+    }
   }
 
   public getConfig() {
@@ -252,6 +270,9 @@ class APIToolkit {
     this.#fastify.addHook("onSend", async (request, reply, data) => {
       if (this.#debug) {
         console.log("apitoolkit:  onSend hook called");
+      }
+      if (!this.#project_id) {
+        return data;
       }
 
       try {
