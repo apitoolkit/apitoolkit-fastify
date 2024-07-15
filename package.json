@@ -1,6 +1,6 @@
 {
   "name": "apitoolkit-fastify",
-  "version": "2.6.0",
+  "version": "2.6.1",
   "description": "APIToolkit Fastify SDK",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
