@@ -1,5 +1,5 @@
 import fetch from "sync-fetch";
-import { PubSub, Topic } from "@google-cloud/pubsub";
+import { PubSub } from "@google-cloud/pubsub";
 import { hrtime } from "node:process";
 import { v4 as uuidv4 } from "uuid";
 import { AxiosInstance, AxiosStatic } from "axios";
