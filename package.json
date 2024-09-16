@@ -41,7 +41,7 @@
     "typescript": "^5.1.6"
   },
   "dependencies": {
-    "@google-cloud/pubsub": "^3.7.1",
+    "@google-cloud/pubsub": "^4.7.2",
     "apitoolkit-js": "^3.2.9",
     "axios": "^1.6.8",
     "fastify": "^4.19.2",
